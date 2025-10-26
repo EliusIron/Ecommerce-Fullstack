@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
-import { Roboto_Condensed } from "next/font/google";
+import { Roboto_Condensed, Lobster_Two } from "next/font/google";
 import "./globals.css";
 
+const LobsterTwo = Lobster_Two({
+  weight: "400",
+  variable: "--font-lobster-two",
+  subsets: ["latin"],
+});
 const geistSans = Roboto_Condensed({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -25,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${LobsterTwo.variable} antialiased`}
       >
         {children}
       </body>
