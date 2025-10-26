@@ -17,7 +17,7 @@ const categories: Category[] = [
 
 export default function SecondaryNavbar() {
   return (
-    <nav className="bg-blue-300 py-2 px-4 md:px-20 shadow-sm font-lobster ">
+    <nav className="bg-blue-200 py-2 px-4 md:px-20 shadow-sm font-lobster ">
       <ul className="flex flex-wrap items-center md:justify-start gap-x-4 md:gap-x-6">
         {categories.map((category) => (
           <li key={category.id}>
