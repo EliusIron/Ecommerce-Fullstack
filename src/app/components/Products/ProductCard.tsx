@@ -1,48 +1,67 @@
 // src/app/components/Products/ProductCard.tsx
-import React from "react"; // Ya no necesitas useState aquí
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import StarRating from "../ui/StartRating";
 import AddCart from "../icons/AddCart";
-import QuantityControl from "../ui/QuantityControl"; // Importa el nuevo componente
-import { useProductQuantity } from "@/app/hooks/useProductQuantity"; // Importa el hook
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  imageUrl: string;
-  rating: number;
-  reviewCount?: number;
-}
+// import CheckIcon from '../icons/CheckIcon'; // Placeholder
+import QuantityControl from "../ui/QuantityControl";
+import { useProductQuantity } from "@/app/hooks/useProductQuantity";
+import { useCart } from "@/app/context/CartContext"; // Necesitamos items aquí
+import type { Product } from "@/app/types/product";
 
 interface ProductCardProps {
   product: Product;
-  // Opcional: Podrías pasar una función onAddToCart desde el padre si la lógica del carrito es global
-  // onAddToCart: (productId: string, quantity: number) => void;
 }
 
-export default function ProductCard({
-  product /*, onAddToCart */,
-}: ProductCardProps) {
-  // Usa el hook para manejar la cantidad de ESTE producto
-  const { quantity, incrementQuantity, decrementQuantity } =
+export default function ProductCard({ product }: ProductCardProps) {
+  // Hook para cantidad LOCAL a añadir
+  const { quantity, incrementQuantity, decrementQuantity, resetQuantity } =
     useProductQuantity(1);
+  // Hook para estado GLOBAL del carrito
+  const { items, addItem } = useCart(); // Obtenemos 'items' del carrito global
+  const [isAdded, setIsAdded] = useState(false);
 
-  // Manejador local para añadir al carrito (podría llamar a una prop del padre)
+  // Busca este producto en el carrito global para obtener su cantidad actual
+  const cartItem = items.find((item) => item.id === product.id);
+  const quantityInCart = cartItem ? cartItem.quantity : 0; // Cantidad en el carrito global (0 si no está)
+
   const handleAddToCartClick = () => {
-    console.log(
-      `Añadir ${quantity} de ${product.name} (ID: ${product.id}) al carrito`
-    );
-    // Aquí llamarías a la función global del carrito, por ejemplo:
-    // onAddToCart(product.id, quantity);
-    // O si tienes un contexto/estado global:
-    // cartContext.addItem(product.id, quantity);
+    addItem(product, quantity); // Sigue añadiendo la cantidad seleccionada localmente
+    setIsAdded(true);
+    resetQuantity?.();
   };
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isAdded) {
+      timer = setTimeout(() => {
+        setIsAdded(false);
+      }, 1500);
+    }
+    return () => clearTimeout(timer);
+  }, [isAdded]);
+
+  const SimpleCheckIcon = ({ className }: { className?: string }) => (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={2.5}
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="m4.5 12.75 6 6 9-13.5"
+      />
+    </svg>
+  );
 
   return (
     // Contenedor principal
     <div className="group relative border border-gray-200 rounded-lg shadow-sm overflow-hidden m-2 w-40 sm:w-64 flex flex-col cursor-pointer">
-      {/* Contenedor de la Imagen */}
+      {/* ... (Imagen) ... */}
       <div className="relative w-full h-32 sm:h-48 bg-gray-200 overflow-hidden">
         <Image
           src={product.imageUrl}
@@ -60,53 +79,69 @@ export default function ProductCard({
 
       {/* Contenedor de Detalles del Producto */}
       <div className="p-2 sm:p-4 flex flex-col flex-grow pb-12 sm:pb-14">
-        {/* Nombre */}
+        {/* ... (Nombre, Rating, Precio) ... */}
         <h3
           className="text-xs sm:text-lg font-semibold text-gray-800 truncate mb-1"
           title={product.name}
         >
           {product.name}
         </h3>
-        {/* Rating */}
         <div className="mb-1 sm:mb-2">
           <StarRating
             rating={product.rating}
             reviewCount={product.reviewCount}
           />
         </div>
-        {/* Precio */}
         <p className="text-xs sm:text-md font-bold text-gray-900 mb-2">
           ${product.price.toFixed(2)}
         </p>
 
-        {/* Controles posicionados absolutamente en la parte inferior */}
+        {/* Controles posicionados absolutamente */}
         <div className="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3 flex items-center justify-between">
-          {/* Componente de Controles de Cantidad */}
+          {/* Control de cantidad LOCAL (para seleccionar cuánto añadir) */}
           <QuantityControl
             quantity={quantity}
             onIncrement={incrementQuantity}
             onDecrement={decrementQuantity}
           />
-
-          {/* Botón Añadir al Carrito (Circular) */}
-          <div>
+          {/* Botón Añadir al Carrito con Badge mostrando cantidad EN CARRITO */}
+          <div className="relative">
             <button
-              onClick={handleAddToCartClick} // Llama al manejador
-              className="
-                     flex items-center justify-center
-                     w-8 h-8 sm:w-10 sm:h-10
-                     bg-yellow-400
-                     text-black
-                     rounded-full
-                     shadow-md
-                     hover:bg-yellow-500
-                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400
-                     transition-all duration-150 ease-in-out
-                 "
-              aria-label={`Añadir ${product.name} al carrito`}
+              onClick={handleAddToCartClick}
+              disabled={isAdded}
+              className={`
+                         flex items-center justify-center
+                         w-8 h-8 sm:w-10 sm:h-10
+                         rounded-full shadow-md
+                         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400
+                         transition-all duration-300 ease-in-out
+                         transform
+                         ${
+                           isAdded
+                             ? "bg-green-500 text-white scale-110 cursor-default"
+                             : "bg-yellow-400 text-black hover:bg-yellow-500 scale-100"
+                         }
+                     `}
+              // aria-label sigue usando la cantidad local para indicar cuánto se añadirá
+              aria-label={
+                isAdded
+                  ? `${product.name} añadido`
+                  : `Añadir ${quantity} ${product.name} al carrito`
+              }
             >
-              <AddCart className="w-4 h-4 sm:w-5 sm:h-5" />
+              {isAdded ? (
+                <SimpleCheckIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              ) : (
+                <AddCart className="w-4 h-4 sm:w-5 sm:h-5" />
+              )}
             </button>
+            {/* Badge de cantidad EN CARRITO (visible si > 0 y no está en estado 'añadido') */}
+            {!isAdded &&
+              quantityInCart > 0 && ( // Condición y valor usan quantityInCart
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                  {quantityInCart} {/* Muestra quantityInCart */}
+                </span>
+              )}
           </div>
         </div>
       </div>
