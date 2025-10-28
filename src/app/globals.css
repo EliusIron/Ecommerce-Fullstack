@@ -25,3 +25,35 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes toast-in-animation {
+  from {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Animación de SALIDA para el Toast */
+@keyframes toast-out-animation {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.95);
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in-animation 0.3s ease-out forwards;
+}
+
+.animate-toast-out {
+  /* Apply forwards to keep the final state (opacity: 0, transform) */
+  animation: toast-out-animation 0.3s ease-in forwards;
+}
