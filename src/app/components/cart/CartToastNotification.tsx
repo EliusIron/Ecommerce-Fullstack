@@ -3,90 +3,89 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { useCart } from "@/app/context/CartContext";
-import type { CartNotification } from "@/app/types/cart"; // Import CartNotification type
+// Importa el store de Zustand y el tipo de notificación
+import { useCartStore, CartNotification } from "@/app/store/cartStore";
 
 export default function CartToastNotification() {
-  const { notification, clearNotification } = useCart();
+  // --- CONECTADO A ZUSTAND ---
+  // 1. Selecciona el estado y la acción del store
+  const { notification, clearNotification } = useCartStore((state) => ({
+    notification: state.notification,
+    clearNotification: state.clearNotification,
+  }));
+  // --- FIN DE LA CONEXIÓN ---
+
   const [isVisible, setIsVisible] = useState(false);
-  // Store the notification data locally to persist during fade-out
+  // Store de la notificación localmente para persistir durante el fade-out
   const [currentNotification, setCurrentNotification] =
     useState<CartNotification | null>(null);
-  const internalTimerRef = useRef<NodeJS.Timeout | null>(null); // For handling exit animation timing
+
+  // Timer para la animación de salida
+  const internalTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Timer para auto-cerrar el toast
+  const autoCloseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // When a new notification arrives from context
+    // Limpia timers anteriores si existen
+    if (internalTimerRef.current) clearTimeout(internalTimerRef.current);
+    if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current);
+
+    // Cuando llega una nueva notificación del store de Zustand
     if (notification) {
-      // Store it locally and make the component visible
       setCurrentNotification(notification);
       setIsVisible(true);
 
-      // Clear any existing internal timer (e.g., from a previous exit animation)
-      if (internalTimerRef.current) {
-        clearTimeout(internalTimerRef.current);
-        internalTimerRef.current = null;
-      }
+      // Inicia un timer para auto-cerrar la notificación
+      autoCloseTimerRef.current = setTimeout(() => {
+        clearNotification(); // Llama a la acción de Zustand para limpiar
+      }, 3000); // Cierra después de 3 segundos
     }
-    // When notification is cleared in context (e.g., by timer in context or manually)
+    // Cuando la notificación se limpia en el store (ya sea por el timer o manualmente)
     else if (!notification && isVisible) {
-      // Start the exit animation by setting isVisible to false
-      setIsVisible(false);
+      setIsVisible(false); // Inicia la animación de salida
 
-      // Set an internal timer to clear local data *after* animation completes
+      // Inicia un timer interno para limpiar los datos locales *después* de la animación
       internalTimerRef.current = setTimeout(() => {
-        setCurrentNotification(null); // Clear local data
-        internalTimerRef.current = null;
-      }, 300); // Should match animation duration
+        setCurrentNotification(null); // Limpia datos locales
+      }, 300); // Debe coincidir con la duración de la animación
     }
 
-    // Cleanup internal timer on unmount
+    // Limpia ambos timers al desmontar
     return () => {
-      if (internalTimerRef.current) {
-        clearTimeout(internalTimerRef.current);
-      }
+      if (internalTimerRef.current) clearTimeout(internalTimerRef.current);
+      if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current);
     };
-  }, [notification, isVisible]); // Depend on context notification and local visibility
+  }, [notification, isVisible, clearNotification]); // Depende de la notificación del store
 
-  // Immediate close button handler
+  // Manejador del botón de cierre inmediato
   const handleCloseClick = () => {
-    // Clear context notification immediately
-    clearNotification();
-    // Start exit animation immediately
-    setIsVisible(false);
-    // Set timer to clear local data after animation
-    if (internalTimerRef.current) clearTimeout(internalTimerRef.current);
-    internalTimerRef.current = setTimeout(() => {
-      setCurrentNotification(null);
-      internalTimerRef.current = null;
-    }, 300);
+    if (autoCloseTimerRef.current) clearTimeout(autoCloseTimerRef.current); // Cancela el auto-cierre
+    clearNotification(); // Limpia el estado en Zustand inmediatamente
   };
 
-  // Render nothing if there's no local notification data
+  // No renderiza nada si no hay datos de notificación locales
   if (!currentNotification) {
     return null;
   }
 
-  // Determine animation classes based on visibility state
+  // Determina las clases de animación
   const animationClasses = isVisible ? "animate-toast-in" : "animate-toast-out";
 
   return (
-    // Container positioned at bottom-right
-    // Opacity is handled by the animation classes now
+    // Container posicionado
     <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm pointer-events-none">
-      {" "}
-      {/* Added pointer-events-none to container */}
-      {/* Toast element */}
+      {/* Elemento Toast */}
       <div
         className={`
           bg-white rounded-lg shadow-xl p-4 flex items-start space-x-3
           border border-gray-200
-          pointer-events-auto /* Enable pointer events for the toast itself */
+          pointer-events-auto /* Habilita eventos de puntero para el toast */
           ${animationClasses}
         `}
         role="alert"
         aria-live="assertive"
       >
-        {/* Image */}
+        {/* Imagen */}
         <div className="relative w-12 h-12 flex-shrink-0">
           <Image
             src={currentNotification.imageUrl || "/placeholder.png"}
@@ -97,7 +96,7 @@ export default function CartToastNotification() {
             sizes="48px"
           />
         </div>
-        {/* Text content */}
+        {/* Contenido de texto */}
         <div className="flex-grow min-w-0">
           <p className="text-sm font-semibold text-green-700">
             {currentNotification.message}
@@ -112,9 +111,9 @@ export default function CartToastNotification() {
             Cantidad: {currentNotification.quantity}
           </p>
         </div>
-        {/* Close button */}
+        {/* Botón de cierre */}
         <button
-          onClick={handleCloseClick} // Use dedicated handler
+          onClick={handleCloseClick} // Usa el manejador de cierre
           className="text-gray-400 hover:text-gray-600 flex-shrink-0 p-1 -m-1"
           aria-label="Cerrar notificación"
         >
