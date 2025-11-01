@@ -1,9 +1,10 @@
 // src/app/components/layout/Navbar.tsx
 "use client";
 
-import React from "react"; // Importa React (eliminados useState y useEffect)
+import React from "react";
 import Link from "next/link";
 import { useCartStore } from "@/app/store/cartStore"; // Importa el store principal
+import useStore from "@/app/hooks/useStore";
 
 // --- Iconos ---
 import WishlistIcon from "../icons/WishlistIcon";
@@ -13,23 +14,15 @@ import Sign from "../icons/Sing";
 import Cuba from "../icons/Cuba";
 import FloatingLabelSearch from "../ui/FloatingLabelSearch";
 
-// Función auxiliar para calcular el total
-const calculateTotalItems = (items: { quantity: number }[]) =>
-  items.reduce((total, item) => total + item.quantity, 0);
-
 export default function Navbar() {
-  // --- INICIO DE LA SOLUCIÓN ---
+  // --- INICIO DE LA CORRECCIÓN ---
 
-  // 1. Selecciona solo las acciones (son estables)
-  const toggleDrawer = useCartStore((state) => state.toggleDrawer);
+  const items = useStore(useCartStore, (state) => state.items);
+  const totalItems =
+    items?.reduce((total, item) => total + item.quantity, 0) ?? 0;
+  const { toggleDrawer } = useCartStore();
 
-  // 2. Selecciona el estado derivado (totalItems)
-  // Esto se suscribe automáticamente y se re-renderiza cuando cambia.
-  const totalItems = useCartStore((state) => calculateTotalItems(state.items));
-
-  // 3. Se eliminaron useState y useEffect para 'totalItems'
-
-  // --- FIN DE LA SOLUCIÓN ---
+  // --- FIN DE LA CORRECCIÓN ---
 
   return (
     <>
