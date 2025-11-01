@@ -8,35 +8,54 @@ import AddCart from "../icons/AddCart";
 import QuantityControl from "../ui/QuantityControl";
 import { useProductQuantity } from "@/app/hooks/useProductQuantity";
 import type { Product } from "@/app/types/product";
-import { useCartStore } from "@/app/store/cartStore";
+import { useCartStore } from "@/app/store/cartStore"; // Importado
 
 interface ProductCardProps {
   product: Product;
-  isPriority?: boolean; // <-- Acepta la nueva prop
+  isPriority?: boolean;
 }
 
 export default function ProductCard({
   product,
-  isPriority = false, // <-- Asigna valor por defecto
+  isPriority = false,
 }: ProductCardProps) {
-  // Hook para manejar la cantidad localmente en la tarjeta
+  // Hook para manejar la cantidad LOCAL (cuántos añadir)
   const { quantity, incrementQuantity, decrementQuantity } =
     useProductQuantity(1);
+
+  // --- INICIO DE LA ACTUALIZACIÓN ---
+
   // Obtiene la acción para añadir items del store Zustand
   const addItemToCart = useCartStore((state) => state.addItem);
 
+  // 1. Conecta con el store para LEER la cantidad actual en el carrito
+  //    Usamos un selector que busca el item y devuelve su cantidad, o 0 si no existe.
+  const inCartQuantity = useCartStore(
+    (state) => state.items.find((item) => item.id === product.id)?.quantity ?? 0
+  );
+
+  // --- FIN DE LA ACTUALIZACIÓN ---
+
   // Manejador para el clic en el botón de añadir
   const handleAddToCartClick = () => {
-    console.log("Intentando añadir:", { product, quantity }); // <-- Depuración
     addItemToCart(product, quantity); // Llama a la acción del store
-    console.log(
-      `Añadido ${quantity} de ${product.name} (ID: ${product.id}) al carrito via Zustand`
-    );
   };
 
   return (
-    // Contenedor principal del card
+    // Contenedor principal del card (relative)
     <div className="group relative border border-gray-200 rounded-lg shadow-sm overflow-hidden m-2 w-40 sm:w-64 flex flex-col cursor-pointer">
+      {/* --- INICIO DE LA ACTUALIZACIÓN --- */}
+      {/* 2. Badge para la cantidad en el carrito */}
+      {inCartQuantity > 0 && (
+        <div
+          className="absolute top-2 right-2 z-10 bg-green-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center border-2 border-white shadow-sm"
+          title={`Tienes ${inCartQuantity} en el carrito`}
+        >
+          {inCartQuantity}
+        </div>
+      )}
+      {/* --- FIN DE LA ACTUALIZACIÓN --- */}
+
       {/* Contenedor de la Imagen */}
       <div className="relative w-full h-32 sm:h-48 bg-gray-200 overflow-hidden">
         <Image
