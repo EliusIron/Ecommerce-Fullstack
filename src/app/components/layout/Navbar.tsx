@@ -1,130 +1,163 @@
 // src/app/components/layout/Navbar.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Importa useState y useEffect
 import Link from "next/link";
-import CartModal from "../cart/CartModal";
-import { useCart } from "@/app/context/CartContext"; // Importa useCart
+import { useCartStore } from "@/app/store/cartStore"; // Importa el store principal
 
 // --- Iconos ---
-import WishlistIcon from "../icons/WishlistIcon";
-import Orders from "../icons/orders";
-import Cart from "../icons/Cart";
-import Sign from "../icons/Sing";
-import Cuba from "../icons/Cuba";
+import WishlistIcon from "../icons/WishlistIcon"; //
+import Orders from "../icons/orders"; //
+import Cart from "../icons/Cart"; //
+import Sign from "../icons/Sing"; //
+import Cuba from "../icons/Cuba"; //
+import FloatingLabelSearch from "../ui/FloatingLabelSearch"; //
 
-// --- Componentes UI ---
-import FloatingLabelSearch from "../ui/FloatingLabelSearch";
-
-// Componente reutilizable para el icono del carrito con contador
-const CartIconWithBadge = () => {
-  const { getItemCount } = useCart();
-  const itemCount = getItemCount();
-
-  return (
-    <div className="relative">
-      {" "}
-      {/* Contenedor relativo para el badge */}
-      <Cart className="w-6 h-6 text-green-600" />
-      {itemCount > 0 && ( // Muestra el badge solo si hay items
-        <span className="absolute -top-3 w-0.5 -right-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
-          {itemCount}
-        </span>
-      )}
-    </div>
-  );
-};
+// Función auxiliar para calcular el total
+const calculateTotalItems = (items: { quantity: number }[]) =>
+  items.reduce((total, item) => total + item.quantity, 0);
 
 export default function Navbar() {
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const { getItemCount } = useCart(); // Llama al hook aquí también si necesitas el count directamente en Navbar
-  const itemCount = getItemCount(); // Obtiene el número total de items
+  // 1. Estado local. VALORES POR DEFECTO (los del servidor)
+  const [totalItems, setTotalItems] = useState(0);
 
-  const openCart = () => setIsCartOpen(true);
-  const closeCart = () => setIsCartOpen(false);
+  // 2. Selecciona solo las acciones (son estables)
+  const toggleDrawer = useCartStore((state) => state.toggleDrawer);
+
+  // 3. Suscripción manual en useEffect
+  useEffect(() => {
+    // Sincroniza el estado inicial del cliente (de localStorage)
+    const initialState = useCartStore.getState();
+    setTotalItems(calculateTotalItems(initialState.items));
+
+    // Suscríbete a futuros cambios
+    const unsubscribe = useCartStore.subscribe((state) => {
+      setTotalItems(calculateTotalItems(state.items));
+    });
+
+    // Limpia la suscripción al desmontar
+    return () => unsubscribe();
+  }, []); // El array vacío asegura que solo se ejecute una vez en el cliente
 
   return (
     <>
       {/* ===== BARRA SUPERIOR (Desktop y Mobile) ===== */}
       <nav className="flex flex-wrap items-center justify-between font-bold py-4 px-4 md:px-20 border-b border-gray-200 shadow-md">
-        {/* ... (Logo y Búsqueda como antes) ... */}
+        {" "}
+        {/* */}
+        {/* LADO IZQUIERDO: Logo */}
         <div className="flex-shrink-0">
-          <Link href={"/"}>Logo</Link>
+          {" "}
+          {/* */}
+          <Link href={"/"}>Logo</Link> {/* */}
         </div>
+        {/* CENTRO: Barra de Búsqueda (Responsive) */}
         <div className="relative w-full md:w-1/3 order-3 md:order-2 mt-4 md:mt-0">
+          {" "}
+          {/* */}
           <FloatingLabelSearch
             id="navbar-search"
             placeholder="Buscar productos..."
-          />
+          />{" "}
+          {/* */}
         </div>
-
         {/* LADO DERECHO: Enlaces (Responsive) */}
         <div className="flex flex-1 md:flex-none items-center justify-end gap-x-6 order-2 md:order-3">
+          {" "}
+          {/* */}
           {/* --- ENLACES VISIBLES SOLO EN MÓVIL (ARRIBA DERECHA) --- */}
-          <div className="flex md:hidden items-center gap-x-4">
-            {/* ... (Region, Sign In como antes) ... */}
-            <Link href="/" className="text-sm p-1">
-              <Cuba className="w-6 h-6" />
+          <div className="flex md:hidden items-center gap-x-6">
+            {" "}
+            {/* */}
+            <Link href="/" className="text-sm hover:no-underline">
+              {" "}
+              {/* */}
+              <div className="flex flex-col items-center gap-x-2">
+                {" "}
+                {/* */}
+                <Cuba className="w-6 h-6" /> {/* */}
+              </div>
             </Link>
             <Link
               href="/signin"
-              className="bg-black text-white p-2 rounded-md text-sm font-medium hover:bg-gray-800"
+              className="bg-black text-white px-2 py-2 rounded-md text-sm font-medium hover:bg-gray-800"
             >
-              <Sign className="w-5 h-5" />
+              {" "}
+              {/* */}
+              <div className="flex items-center gap-x-2">
+                {" "}
+                {/* */}
+                <Sign className="w-6 h-6" /> {/* */}
+              </div>
             </Link>
-
-            {/* --- Botón Carrito Móvil (USA EL NUEVO COMPONENTE) --- */}
-            <button
-              onClick={openCart}
-              className="text-sm p-1"
-              aria-label={`Abrir carrito (${itemCount} items)`}
-            >
-              <CartIconWithBadge /> {/* Usa el componente con badge */}
-            </button>
           </div>
-
           {/* --- ENLACES VISIBLES SOLO EN ESCRITORIO --- */}
           <div className="hidden md:flex items-center gap-x-6">
-            {/* ... (Órdenes, Wishlist como antes) ... */}
+            {" "}
+            {/* */}
+            {/* 1. ÓRDENES (Desktop) */}
             <Link href="/orders" className="text-sm hover:no-underline">
-              <div className="flex flex-col items-center gap-y-1">
-                <Orders className="w-6 h-6 text-amber-600" />
-                <div className="text-xs">orders</div>
+              {" "}
+              {/* */}
+              <div className="flex flex-col items-center gap-x-2">
+                {" "}
+                {/* */}
+                <Orders className="w-6 h-6 text-amber-600" /> {/* */}
+                <div>orders</div> {/* */}
               </div>
             </Link>
+            {/* 2. WISHLIST (Desktop) */}
             <Link href="/wishlist" className="text-sm hover:no-underline">
-              <div className="flex flex-col items-center gap-y-1">
-                <WishlistIcon className="w-6 h-6 text-red-600" />
-                <div className="text-xs">wishlist</div>
+              {" "}
+              {/* */}
+              <div className="flex flex-col items-center">
+                {" "}
+                {/* */}
+                <WishlistIcon className="w-6 h-6 text-red-600" /> {/* */}
+                <div>wishlist</div> {/* */}
               </div>
             </Link>
-
-            {/* 3. CARRITO (Desktop - USA EL NUEVO COMPONENTE) */}
+            {/* 3. CARRITO (Desktop) - USA EL ESTADO HIDRATADO */}
             <button
-              onClick={openCart}
-              className="text-sm hover:no-underline"
-              aria-label={`Abrir carrito (${itemCount} items)`}
+              onClick={toggleDrawer} // Usa la acción estable
+              className="text-sm hover:no-underline relative cursor-pointer"
             >
-              <div className="flex flex-col items-center gap-y-1">
-                <CartIconWithBadge /> {/* Usa el componente con badge */}
-                <div className="text-xs">cart</div>
+              <div className="flex flex-col items-center">
+                {" "}
+                {/* */}
+                <Cart className="w-6 h-6 text-green-600" /> {/* */}
+                <div>cart</div> {/* */}
               </div>
+              {/* 4. Renderiza usando el estado local 'totalItems' */}
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
             </button>
-
-            {/* ... (Region, Sign In como antes) ... */}
-            <Link href="/" className="text-sm hover:no-underline">
-              <div className="flex flex-col items-center gap-y-1 ml-4 mr-4">
-                <Cuba className="w-6 h-6 " />
-                <div className="text-xs">Region</div>
+            {/* 4. REGION (Desktop) */}
+            <Link href="/cart" className="text-sm hover:no-underline">
+              {" "}
+              {/* */}
+              <div className="flex flex-col items-center w-6 ml-4 mr-4">
+                {" "}
+                {/* */}
+                <Cuba className="w-6 h-6 " /> {/* */}
+                <div>Region</div> {/* */}
               </div>
             </Link>
+            {/* 5. SIGN IN (Desktop) */}
             <Link
               href="/signin"
               className="bg-black text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800"
             >
+              {" "}
+              {/* */}
               <div className="flex items-center gap-x-2">
-                <Sign className="w-5 h-5" />
-                <span>Sign In</span>
+                {" "}
+                {/* */}
+                <Sign className="w-6 h-6" /> {/* */}
+                <span>Sign In</span> {/* */}
               </div>
             </Link>
           </div>
@@ -133,37 +166,52 @@ export default function Navbar() {
 
       {/* ===== BARRA INFERIOR FIJA (Solo Mobile) ===== */}
       <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-gray-200 shadow-lg md:hidden z-50">
+        {" "}
+        {/* */}
         <div className="flex items-center justify-around py-2">
-          {/* ... (Órdenes, Wishlist como antes) ... */}
+          {" "}
+          {/* */}
+          {/* ... (Orders, Wishlist) ... */}
           <Link href="/orders" className="text-sm hover:no-underline">
-            <div className="flex flex-col items-center gap-y-1">
-              <Orders className="w-6 h-6 text-amber-600" />
-              <div className="text-xs">orders</div>
+            {" "}
+            {/* */}
+            <div className="flex flex-col items-center gap-x-1">
+              {" "}
+              {/* */}
+              <Orders className="w-6 h-6 text-amber-600" /> {/* */}
+              <div className="text-xs">orders</div> {/* */}
             </div>
           </Link>
           <Link href="/wishlist" className="text-sm hover:no-underline">
-            <div className="flex flex-col items-center gap-y-1">
-              <WishlistIcon className="w-6 h-6 text-red-600" />
-              <div className="text-xs">wishlist</div>
+            {" "}
+            {/* */}
+            <div className="flex flex-col items-center gap-x-1">
+              {" "}
+              {/* */}
+              <WishlistIcon className="w-6 h-6 text-red-600" /> {/* */}
+              <div className="text-xs">wishlist</div> {/* */}
             </div>
           </Link>
-
-          {/* Botón Carrito en barra inferior (USA EL NUEVO COMPONENTE) */}
+          {/* Carrito (Móvil) */}
           <button
-            onClick={openCart}
-            className="text-sm hover:no-underline"
-            aria-label={`Abrir carrito (${itemCount} items)`}
+            onClick={toggleDrawer} // Usa la acción estable
+            className="text-sm hover:no-underline relative cursor-pointer"
           >
-            <div className="flex flex-col items-center gap-y-1">
-              <CartIconWithBadge /> {/* Usa el componente con badge */}
-              <div className="text-xs">cart</div>
+            <div className="flex flex-col items-center gap-x-1">
+              {" "}
+              {/* */}
+              <Cart className="w-6 h-6 text-green-600" /> {/* */}
+              <div className="text-xs">cart</div> {/* */}
             </div>
+            {/* 4. Renderiza usando el estado local 'totalItems' */}
+            {totalItems > 0 && (
+              <span className="absolute -top-1 right-1 bg-red-600 text-white text-[10px] rounded-full h-3.5 w-3.5 flex items-center justify-center p-0.5">
+                {totalItems > 9 ? "9+" : totalItems}
+              </span>
+            )}
           </button>
         </div>
       </nav>
-
-      {/* Renderiza el Modal del Carrito */}
-      <CartModal isOpen={isCartOpen} onClose={closeCart} />
     </>
   );
 }
