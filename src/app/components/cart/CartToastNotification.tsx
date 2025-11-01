@@ -9,10 +9,8 @@ import { useCartStore, CartNotification } from "@/app/store/cartStore";
 export default function CartToastNotification() {
   // --- CONECTADO A ZUSTAND ---
   // 1. Selecciona el estado y la acción del store
-  const { notification, clearNotification } = useCartStore((state) => ({
-    notification: state.notification,
-    clearNotification: state.clearNotification,
-  }));
+  const notification = useCartStore((state) => state.notification);
+  const clearNotification = useCartStore((state) => state.clearNotification);
   // --- FIN DE LA CONEXIÓN ---
 
   const [isVisible, setIsVisible] = useState(false);

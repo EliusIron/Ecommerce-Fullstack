@@ -65,9 +65,7 @@ export default function ProductCard({
           sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 20vw"
           style={{ objectFit: "contain" }}
           className="transition-transform duration-300 ease-in-out group-hover:scale-110 p-2"
-          // --- CORRECCIÓN LCP ---
-          priority={isPriority} // <-- Usa la prop aquí
-          // --------------------
+          priority={isPriority}
         />
       </div>
       {/* Contenedor de Detalles */}
@@ -92,7 +90,7 @@ export default function ProductCard({
         </p>
         {/* Controles posicionados en la parte inferior */}
         <div className="absolute bottom-2 left-2 right-2 sm:bottom-3 sm:left-3 sm:right-3 flex items-center justify-between gap-x-2">
-          {/* Componente de Controles de Cantidad */}
+          {/* Componente de Controles de Cantidad (para añadir MÁS) */}
           <QuantityControl
             quantity={quantity}
             onIncrement={incrementQuantity}
