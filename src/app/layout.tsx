@@ -2,7 +2,10 @@
 import type { Metadata } from "next";
 import { Roboto_Condensed, Lobster_Two } from "next/font/google"; //
 import "./globals.css"; //
-import CartDrawer from "./components/cart/CartDrawer"; // <--- IMPORTA EL DRAWER
+import CartDrawer from "./components/cart/CartDrawer"; //
+// --- INICIO DE LA ACTUALIZACIÓN ---
+import CartToastNotification from "./components/cart/CartToastNotification"; // 1. IMPORTA EL TOAST
+// --- FIN DE LA ACTUALIZACIÓN ---
 
 // --- Definiciones de fuentes ---
 const LobsterTwo = Lobster_Two({
@@ -42,6 +45,11 @@ export default function RootLayout({
         {children}
         {/* Renderiza el CartDrawer aquí para que esté disponible globalmente */}
         <CartDrawer />
+
+        {/* --- INICIO DE LA ACTUALIZACIÓN --- */}
+        {/* 2. RENDERIZA EL TOAST AQUÍ */}
+        <CartToastNotification />
+        {/* --- FIN DE LA ACTUALIZACIÓN --- */}
       </body>
     </html>
   );
