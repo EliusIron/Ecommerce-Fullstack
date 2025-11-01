@@ -1,8 +1,8 @@
 // src/app/components/cart/CartDrawer.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useCartStore, CartItem } from "@/app/store/cartStore"; // Importa el store y el TIPO
+import React from "react";
+import { useCartStore, CartItem } from "@/app/store/cartStore";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -14,58 +14,18 @@ const calculateTotalPrice = (items: CartItem[]) =>
   items.reduce((total, item) => total + item.price * item.quantity, 0);
 
 export default function CartDrawer() {
-  // --- INICIO DE LA SOLUCIÓN DE HIDRATACIÓN ---
+  // 1. Selecciona el estado y las acciones directamente desde el store
+  const isOpen = useCartStore((state) => state.isDrawerOpen);
+  const items = useCartStore((state) => state.items);
+  const toggleDrawer = useCartStore((state) => state.toggleDrawer);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const updateQuantity = useCartStore((state) => state.updateQuantity);
 
-  // 1. Estado local. VALORES POR DEFECTO (los del servidor)
-  const [isOpen, setIsOpen] = useState(false);
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [isMounted, setIsMounted] = useState(false); // Flag de montaje
+  // 2. Calcula los totales derivados directamente del estado seleccionado
+  const totalItems = calculateTotalItems(items);
+  const totalPrice = calculateTotalPrice(items);
 
-  // 2. Selecciona solo las acciones (son estables)
-  const { toggleDrawer, removeItem, updateQuantity } = useCartStore(
-    (state) => ({
-      toggleDrawer: state.toggleDrawer,
-      removeItem: state.removeItem,
-      updateQuantity: state.updateQuantity,
-    })
-    // ¡NO NECESITA SHALLOW! Las acciones son estables.
-  );
-
-  // 3. Suscripción manual en useEffect
-  useEffect(() => {
-    // Sincroniza el estado inicial del cliente (de localStorage)
-    const currentState = useCartStore.getState();
-    setIsOpen(currentState.isDrawerOpen);
-    setItems(currentState.items);
-    setTotalItems(calculateTotalItems(currentState.items));
-    setTotalPrice(calculateTotalPrice(currentState.items));
-
-    // Marca como montado
-    setIsMounted(true);
-
-    // Suscríbete a futuros cambios
-    const unsubscribe = useCartStore.subscribe((state) => {
-      setIsOpen(state.isDrawerOpen);
-      setItems(state.items);
-      setTotalItems(calculateTotalItems(state.items));
-      setTotalPrice(calculateTotalPrice(state.items));
-    });
-
-    // 4. Limpia la suscripción
-    return () => unsubscribe();
-  }, []); // Array vacío = ejecutar una vez en el montaje
-
-  // --- FIN DE LA SOLUCIÓN DE HIDRATACIÓN ---
-
-  // 5. NO RENDERIZAR NADA HASTA QUE ESTÉ MONTADO
-  // Esto es lo que soluciona el 'mismatch'
-  if (!isMounted) {
-    return null;
-  }
-
-  // 6. Ahora, si está montado, renderiza basado en el estado 'isOpen'
+  // 3. Si 'isOpen' es falso (estado inicial o cerrado), no renderiza nada.
   if (!isOpen) {
     return null;
   }
@@ -86,7 +46,7 @@ export default function CartDrawer() {
         <div className="flex flex-col h-full">
           {/* Encabezado */}
           <div className="flex items-center justify-between p-4 border-b">
-            {/* Usa el estado local 'totalItems' */}
+            {/* Usa el totalItems calculado */}
             <h2 className="text-lg font-semibold">Tu Carrito ({totalItems})</h2>
             <button
               onClick={toggleDrawer} // Usa la acción estable
@@ -98,7 +58,7 @@ export default function CartDrawer() {
           </div>
 
           {/* Lista de Items */}
-          {/* Usa el estado local 'items' */}
+          {/* Usa 'items' seleccionados */}
           {items.length === 0 ? (
             <div className="flex flex-col items-center justify-center flex-grow p-4">
               <p className="text-gray-500">Tu carrito está vacío.</p>
@@ -111,7 +71,7 @@ export default function CartDrawer() {
             </div>
           ) : (
             <div className="flex-grow overflow-y-auto p-4 space-y-4">
-              {/* Usa el estado local 'items' */}
+              {/* Usa 'items' seleccionados */}
               {items.map((item) => (
                 <div key={item.id} className="flex gap-4">
                   <div className="relative w-16 h-16 rounded-md overflow-hidden bg-gray-100 flex-shrink-0">
@@ -167,7 +127,7 @@ export default function CartDrawer() {
           )}
 
           {/* Pie de página (Footer) */}
-          {/* Usa 'items' y 'totalPrice' locales */}
+          {/* Usa 'items' y 'totalPrice' calculados */}
           {items.length > 0 && (
             <div className="p-4 border-t bg-gray-50">
               <div className="flex justify-between items-center mb-4">
