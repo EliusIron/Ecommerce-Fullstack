@@ -39,8 +39,15 @@ export default function ProductList({
 
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 xl:grid-cols-5 place-items-center md:place-items-start">
-      {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+      {products.map((product, index) => (
+        <ProductCard
+          key={product.id}
+          product={product}
+          // --- CORRECCIÓN LCP ---
+          // Prioriza la carga de las primeras 10 imágenes
+          isPriority={index < SKELETON_COUNT}
+          // --------------------
+        />
       ))}
     </div>
   );
